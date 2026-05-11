@@ -212,213 +212,243 @@ class _MapScreenState extends State<MapScreen> {
             visible: !appState.isLoading,
             child: WebViewWidget(controller: appState.controller),
           ),
-          Visibility(
-            visible: !appState.isLoading,
-            child: Center(
-              child: FrostedGlassBox(
-                width: 300.0,
-                height: 228.0,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        TypeAheadField(
-                          emptyBuilder: (context) => const Text(
-                              'Digite o nome da cidade (ex: Paris, London, São Paulo)'),
-                          loadingBuilder: (context) => const Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Row(
+          Center(
+            child: AnimatedAlign(
+              duration: const Duration(milliseconds: 600),
+              curve: Curves.easeInOut,
+              alignment: appState.isRequestDone
+                  ? Alignment.bottomCenter
+                  : Alignment.center,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 600),
+                curve: Curves.easeInOut,
+                width: appState.isRequestDone ? 400 : 300.0,
+                height: 228.0, // Altura mantida igual ao seu código original
+                child: FrostedGlassBox(
+                  width: double.infinity,
+                  height: double.infinity,
+                  // AnimatedSwitcher fará um fade suave entre o form e o loading
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: appState.isLoading
+                        // CONTEÚDO DE LOADING
+                        ? Padding(
+                            key: const ValueKey(
+                                'loadingView'), // Key necessária para o AnimatedSwitcher identificar a mudança
+                            padding: const EdgeInsets.all(12.0),
+                            child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child:
-                                      CircularProgressIndicator(strokeWidth: 2),
+                                const CircularProgressIndicator(),
+                                const SizedBox(height: 20),
+                                Text(
+                                  appState.progressStageLabel,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w600),
                                 ),
-                                SizedBox(width: 10),
-                                Text('Buscando cidades...'),
+                                if (appState.progressPercent > 0) ...[
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    '${appState.progressPercent.toStringAsFixed(0)}% concluído',
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
                               ],
                             ),
-                          ),
-                          debounceDuration: const Duration(milliseconds: 400),
-                          builder: (context, controller, focusNode) {
-                            return TextFormField(
-                              controller: controller,
-                              focusNode: focusNode,
-                              decoration: const InputDecoration(
-                                hintText: 'Cidade de partida',
-                                prefixIcon: Icon(Icons.location_on_outlined),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Insira uma cidade';
-                                }
-                                return null;
-                              },
-                            );
-                          },
-                          controller: _startLocationController,
-                          suggestionsCallback: (pattern) async {
-                            return await appState.searchCities(pattern);
-                          },
-                          itemBuilder: (context, suggestion) {
-                            return ListTile(
-                              leading: const Icon(Icons.location_city),
-                              title: Text(suggestion),
-                            );
-                          },
-                          onSelected: (suggestion) {
-                            _startLocationController.text = suggestion;
-                          },
-                        ),
-                        const SizedBox(height: 16.0),
-                        TypeAheadField(
-                            emptyBuilder: (context) => const Text(
-                                'Digite o nome da cidade (ex: Paris, London, São Paulo)'),
-                            loadingBuilder: (context) => const Padding(
-                                  padding: EdgeInsets.all(8.0),
-                                  child: Row(
+                          )
+                        // CONTEÚDO DO FORMULÁRIO
+                        : Padding(
+                            key: const ValueKey(
+                                'formView'), // Key necessária para o AnimatedSwitcher identificar a mudança
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 8.0),
+                            child: Form(
+                              key: _formKey,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  TypeAheadField(
+                                    emptyBuilder: (context) => const Text(
+                                        'Digite o nome da cidade (ex: Paris, London, São Paulo)'),
+                                    loadingBuilder: (context) => const Padding(
+                                      padding: EdgeInsets.all(8.0),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                                strokeWidth: 2),
+                                          ),
+                                          SizedBox(width: 10),
+                                          Text('Buscando cidades...'),
+                                        ],
+                                      ),
+                                    ),
+                                    debounceDuration:
+                                        const Duration(milliseconds: 400),
+                                    builder: (context, controller, focusNode) {
+                                      return TextFormField(
+                                          controller: controller,
+                                          focusNode: focusNode,
+                                          decoration: const InputDecoration(
+                                            hintText: 'Cidade de partida',
+                                            prefixIcon: Icon(
+                                                Icons.location_on_outlined),
+                                          ),
+                                          validator: (value) {
+                                            if (value == null ||
+                                                value.isEmpty) {
+                                              return 'Insira uma cidade';
+                                            }
+                                            return null;
+                                          },
+                                          onTap: () {
+                                            setState(() {
+                                              appState.isRequestDone = false;
+                                            });
+                                          });
+                                    },
+                                    controller: _startLocationController,
+                                    suggestionsCallback: (pattern) async {
+                                      return await appState
+                                          .searchCities(pattern);
+                                    },
+                                    itemBuilder: (context, suggestion) {
+                                      return ListTile(
+                                        leading:
+                                            const Icon(Icons.location_city),
+                                        title: Text(suggestion),
+                                      );
+                                    },
+                                    onSelected: (suggestion) {
+                                      _startLocationController.text =
+                                          suggestion;
+                                    },
+                                  ),
+                                  const SizedBox(height: 16.0),
+                                  TypeAheadField(
+                                      emptyBuilder: (context) => const Text(
+                                          'Digite o nome da cidade (ex: Paris, London, São Paulo)'),
+                                      loadingBuilder: (context) =>
+                                          const Padding(
+                                            padding: EdgeInsets.all(8.0),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                SizedBox(
+                                                  width: 20,
+                                                  height: 20,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                          strokeWidth: 2),
+                                                ),
+                                                SizedBox(width: 10),
+                                                Text('Buscando cidades...'),
+                                              ],
+                                            ),
+                                          ),
+                                      debounceDuration:
+                                          const Duration(milliseconds: 400),
+                                      builder:
+                                          (context, controller, focusNode) {
+                                        return TextFormField(
+                                            controller: controller,
+                                            focusNode: focusNode,
+                                            decoration: const InputDecoration(
+                                              hintText: 'Cidade de destino',
+                                              prefixIcon:
+                                                  Icon(Icons.flag_outlined),
+                                            ),
+                                            validator: (value) {
+                                              if (value == null ||
+                                                  value.isEmpty) {
+                                                return 'Insira outra cidade';
+                                              }
+                                              return null;
+                                            },
+                                            onTap: () {
+                                              setState(() {
+                                                appState.isRequestDone = false;
+                                              });
+                                            });
+                                      },
+                                      controller: _endLocationController,
+                                      suggestionsCallback: (pattern) async {
+                                        return await appState
+                                            .searchCities(pattern);
+                                      },
+                                      itemBuilder: (context, suggestion) {
+                                        return ListTile(
+                                          leading:
+                                              const Icon(Icons.location_city),
+                                          title: Text(suggestion),
+                                        );
+                                      },
+                                      onSelected: (suggestion) {
+                                        _endLocationController.text =
+                                            suggestion;
+                                      }),
+                                  const SizedBox(height: 16.0),
+                                  Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                            strokeWidth: 2),
+                                      const SizedBox(width: 65),
+                                      ElevatedButton.icon(
+                                        icon: const Icon(Icons.thunderstorm),
+                                        onPressed: () {
+                                          if (_formKey.currentState!
+                                              .validate()) {
+                                            appState.endCity =
+                                                _endLocationController.text;
+                                            appState.startCity =
+                                                _startLocationController.text;
+                                            if (_endLocationController.text ==
+                                                _startLocationController.text) {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                  backgroundColor: Colors.red,
+                                                  content: Text(
+                                                      'Digite o nome de cidades diferentes'),
+                                                ),
+                                              );
+                                            } else {
+                                              appState.saveSettings();
+                                              appState.isRequestDone = false;
+                                              appState.generateMap(
+                                                context,
+                                                onProgress: () {
+                                                  if (mounted) {
+                                                    setState(() {});
+                                                  }
+                                                },
+                                              ).then((_) {
+                                                if (mounted) {
+                                                  setState(() {});
+                                                }
+                                              });
+                                            }
+                                          }
+                                        },
+                                        label: const Text('Verificar rota'),
                                       ),
-                                      SizedBox(width: 10),
-                                      Text('Buscando cidades...'),
+                                      const SizedBox(width: 15),
+                                      IconButton(
+                                          onPressed: () => setState(() {
+                                                appState.openSettings(context);
+                                              }),
+                                          icon: const Icon(Icons.settings))
                                     ],
                                   ),
-                                ),
-                            debounceDuration: const Duration(milliseconds: 400),
-                            builder: (context, controller, focusNode) {
-                              return TextFormField(
-                                controller: controller,
-                                focusNode: focusNode,
-                                decoration: const InputDecoration(
-                                  hintText: 'Cidade de destino',
-                                  prefixIcon: Icon(Icons.flag_outlined),
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Insira outra cidade';
-                                  }
-                                  return null;
-                                },
-                              );
-                            },
-                            controller: _endLocationController,
-                            suggestionsCallback: (pattern) async {
-                              return await appState.searchCities(pattern);
-                            },
-                            itemBuilder: (context, suggestion) {
-                              return ListTile(
-                                leading: const Icon(Icons.location_city),
-                                title: Text(suggestion),
-                              );
-                            },
-                            onSelected: (suggestion) {
-                              _endLocationController.text = suggestion;
-                            }),
-                        const SizedBox(height: 16.0),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const SizedBox(width: 65),
-                            ElevatedButton.icon(
-                              icon: const Icon(Icons.thunderstorm),
-                              onPressed: () {
-                                if (_formKey.currentState!.validate()) {
-                                  appState.endCity =
-                                      _endLocationController.text;
-                                  appState.startCity =
-                                      _startLocationController.text;
-                                  if (_endLocationController.text ==
-                                      _startLocationController.text) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        backgroundColor: Colors.red,
-                                        content: Text(
-                                            'Digite o nome de cidades diferentes'),
-                                      ),
-                                    );
-                                  } else {
-                                    appState.saveSettings();
-                                    appState.generateMap(
-                                      context,
-                                      onProgress: () {
-                                        if (mounted) {
-                                          setState(() {});
-                                        }
-                                      },
-                                    ).then((_) {
-                                      if (mounted) {
-                                        setState(() {});
-                                      }
-                                    });
-                                  }
-                                }
-                              },
-                              label: const Text('Verificar rota'),
+                                ],
+                              ),
                             ),
-                            const SizedBox(width: 15),
-                            IconButton(
-                                onPressed: () => setState(() {
-                                      appState.openSettings(context);
-                                    }),
-                                icon: const Icon(Icons.settings))
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Visibility(
-            visible: appState.isLoading,
-            child: Center(
-              child: FrostedGlassBox(
-                height: 220.0,
-                width: 320.0,
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircularProgressIndicator(
-                        value: /* appState.progressPercent > 0
-                            ? appState.progressPercent / 100
-                            : */
-                            null,
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        appState.progressStageLabel,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      /*if (appState.progressDetail.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          appState.progressDetail,
-                          textAlign: TextAlign.center,
-                        ),
-                      ],*/
-                      if (appState.progressPercent > 0) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          '${appState.progressPercent.toStringAsFixed(0)}% concluído',
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ],
+                          ),
                   ),
                 ),
               ),
@@ -481,6 +511,7 @@ class MyAppState extends ChangeNotifier {
   late final WebViewController controller;
   bool isColorDifferent = false;
   bool isLoading = false;
+  bool isRequestDone = false;
   String startCity = "";
   bool alarmTwoEnabled = false;
   String endCity = "";
@@ -913,6 +944,7 @@ class MyAppState extends ChangeNotifier {
       );
     } finally {
       isLoading = false;
+      isRequestDone = true;
       progressStage = '';
       progressDetail = '';
       progressPercent = 0;
