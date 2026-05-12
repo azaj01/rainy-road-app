@@ -106,16 +106,21 @@ class MapScreen extends StatefulWidget {
   State<MapScreen> createState() => _MapScreenState();
 }
 
-class _MapScreenState extends State<MapScreen> {
+class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   MyAppState appState = MyAppState();
   final TextEditingController _startLocationController =
       TextEditingController();
   final TextEditingController _endLocationController = TextEditingController();
+  late AnimationController _swapAnimationController;
 
   @override
   initState() {
     super.initState();
+    _swapAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
     AndroidAlarmManager.initialize();
     UpdateChecker().checkForUpdates(context);
     appState.loadCities();
@@ -146,6 +151,26 @@ class _MapScreenState extends State<MapScreen> {
         ),
       );
     }
+  }
+
+  @override
+  void dispose() {
+    _swapAnimationController.dispose();
+    _startLocationController.dispose();
+    _endLocationController.dispose();
+    super.dispose();
+  }
+
+  void _swapCities() {
+    setState(() {
+      final temp = _startLocationController.text;
+      _startLocationController.text = _endLocationController.text;
+      _endLocationController.text = temp;
+      appState.isRequestDone = false;
+    });
+    _swapAnimationController.forward(from: 0.0).then((_) {
+      _swapAnimationController.reverse();
+    });
   }
 
   void handleClick(int item) {
@@ -222,7 +247,7 @@ class _MapScreenState extends State<MapScreen> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 600),
                 curve: Curves.easeInOut,
-                width: appState.isRequestDone ? 400 : 320.0,
+                width: appState.isRequestDone ? 400 : 350.0,
                 height: 228.0,
                 child: FrostedGlassBox(
                   width: double.infinity,
@@ -293,10 +318,23 @@ class _MapScreenState extends State<MapScreen> {
                                       return TextFormField(
                                           controller: controller,
                                           focusNode: focusNode,
-                                          decoration: const InputDecoration(
+                                          decoration: InputDecoration(
                                             hintText: 'Cidade de partida',
-                                            prefixIcon: Icon(
+                                            prefixIcon: const Icon(
                                                 Icons.location_on_outlined),
+                                            suffixIcon: SlideTransition(
+                                              position: Tween<Offset>(
+                                                begin: const Offset(0, 0),
+                                                end: const Offset(0, 0.3),
+                                              ).animate(
+                                                  _swapAnimationController),
+                                              child: IconButton(
+                                                icon: const Icon(
+                                                    Icons.arrow_downward),
+                                                tooltip: 'Inverter rotas',
+                                                onPressed: _swapCities,
+                                              ),
+                                            ),
                                           ),
                                           validator: (value) {
                                             if (value == null ||
@@ -358,10 +396,23 @@ class _MapScreenState extends State<MapScreen> {
                                         return TextFormField(
                                             controller: controller,
                                             focusNode: focusNode,
-                                            decoration: const InputDecoration(
+                                            decoration: InputDecoration(
                                               hintText: 'Cidade de destino',
-                                              prefixIcon:
-                                                  Icon(Icons.flag_outlined),
+                                              prefixIcon: const Icon(
+                                                  Icons.flag_outlined),
+                                              suffixIcon: SlideTransition(
+                                                position: Tween<Offset>(
+                                                  begin: const Offset(0, 0),
+                                                  end: const Offset(0, -0.3),
+                                                ).animate(
+                                                    _swapAnimationController),
+                                                child: IconButton(
+                                                  icon: const Icon(
+                                                      Icons.arrow_upward),
+                                                  tooltip: 'Inverter rotas',
+                                                  onPressed: _swapCities,
+                                                ),
+                                              ),
                                             ),
                                             validator: (value) {
                                               if (value == null ||
