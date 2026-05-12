@@ -203,7 +203,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       _serverController.text =
-          prefs.getString('server') ?? "https://rainyroad.duckdns.org";
+          prefs.getString('server') ?? "https://rainyroad.roxel.dev";
       repEnabled = prefs.getBool('repEnabled') ?? false;
       alarmTwoEnabled = prefs.getBool('alarmTwoEnabled') ?? false;
       frequency = prefs.getString('frequency') ?? "";

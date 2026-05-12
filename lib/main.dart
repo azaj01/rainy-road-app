@@ -222,12 +222,11 @@ class _MapScreenState extends State<MapScreen> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 600),
                 curve: Curves.easeInOut,
-                width: appState.isRequestDone ? 400 : 300.0,
-                height: 228.0, // Altura mantida igual ao seu código original
+                width: appState.isRequestDone ? 400 : 320.0,
+                height: 228.0,
                 child: FrostedGlassBox(
                   width: double.infinity,
                   height: double.infinity,
-                  // AnimatedSwitcher fará um fade suave entre o form e o loading
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
                     child: appState.isLoading
@@ -516,7 +515,7 @@ class MyAppState extends ChangeNotifier {
   bool alarmTwoEnabled = false;
   String endCity = "";
   String htmlContent = "";
-  String server = "https://rainyroad.duckdns.org";
+  String server = "https://rainyroad.roxel.dev";
   List<String> citiesList = List.empty();
   String progressStage = "";
   String progressDetail = "";
