@@ -447,7 +447,66 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      const SizedBox(width: 65),
+                                      // 1. Botão de seleção de transporte (Substitui o SizedBox de 65)
+                                      PopupMenuButton<String>(
+                                        tooltip: 'Modo de transporte',
+                                        // Aqui o ícone muda dinamicamente com base na seleção
+                                        icon: Icon(
+                                          appState.travelMode == 'bicycle'
+                                              ? Icons.directions_bike
+                                              : appState.travelMode ==
+                                                      'pedestrian'
+                                                  ? Icons.directions_walk
+                                                  : Icons
+                                                      .directions_car, // Padrão
+                                        ),
+                                        onSelected: (String mode) {
+                                          setState(() {
+                                            appState.travelMode =
+                                                mode; // Salve a escolha no seu appState
+                                            appState.isRequestDone =
+                                                false; // Reseta se a rota já estava calculada
+                                          });
+                                        },
+                                        itemBuilder: (BuildContext context) =>
+                                            <PopupMenuEntry<String>>[
+                                          const PopupMenuItem<String>(
+                                            value: 'auto',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.directions_car),
+                                                SizedBox(width: 8),
+                                                Text('Carro/Moto'),
+                                              ],
+                                            ),
+                                          ),
+                                          const PopupMenuItem<String>(
+                                            value: 'bicycle',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.directions_bike),
+                                                SizedBox(width: 8),
+                                                Text('Bicicleta'),
+                                              ],
+                                            ),
+                                          ),
+                                          const PopupMenuItem<String>(
+                                            value: 'pedestrian',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.directions_walk),
+                                                SizedBox(width: 8),
+                                                Text('A pé'),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+
+                                      const SizedBox(
+                                          width:
+                                              8), // Espaçamento entre o botão de transporte e o de rota
+
                                       ElevatedButton.icon(
                                         icon: const Icon(Icons.thunderstorm),
                                         onPressed: () {
@@ -457,6 +516,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                                 _endLocationController.text;
                                             appState.startCity =
                                                 _startLocationController.text;
+
                                             if (_endLocationController.text ==
                                                 _startLocationController.text) {
                                               ScaffoldMessenger.of(context)
@@ -487,12 +547,15 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                         },
                                         label: const Text('Verificar rota'),
                                       ),
+
                                       const SizedBox(width: 15),
+
                                       IconButton(
-                                          onPressed: () => setState(() {
-                                                appState.openSettings(context);
-                                              }),
-                                          icon: const Icon(Icons.settings))
+                                        onPressed: () => setState(() {
+                                          appState.openSettings(context);
+                                        }),
+                                        icon: const Icon(Icons.settings),
+                                      )
                                     ],
                                   ),
                                 ],
@@ -562,6 +625,7 @@ class MyAppState extends ChangeNotifier {
   bool isColorDifferent = false;
   bool isLoading = false;
   bool isRequestDone = false;
+  String travelMode = "auto";
   String startCity = "";
   bool alarmTwoEnabled = false;
   String endCity = "";
@@ -809,6 +873,7 @@ class MyAppState extends ChangeNotifier {
         <String, String>{
           'start_location': startLocation,
           'end_location': endLocation,
+          'travel_mode': travelMode,
         },
       );
     } catch (error) {
